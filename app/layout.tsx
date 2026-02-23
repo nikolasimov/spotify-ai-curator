@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Spotify AI Curator",
-  description: "Dockerized Next.js app for Spotify-powered AI playlist curation.",
+  description:
+    "Dockerized Next.js app for Spotify-powered AI playlist curation.",
 };
 
 export default function RootLayout({

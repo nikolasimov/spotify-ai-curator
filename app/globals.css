@@ -1,16 +1,46 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
+body {
+  width: 100%;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: var(--font-geist-sans), system-ui, -apple-system, Segoe UI, Roboto,
-    Helvetica, Arial, sans-serif;
+  color: #f4f4f5;
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgba(168, 85, 247, 0.65),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at 80% 80%,
+      rgba(99, 102, 241, 0.5),
+      transparent 45%
+    ),
+    radial-gradient(
+      ellipse at 10% 90%,
+      rgba(16, 185, 129, 0.35),
+      transparent 35%
+    ),
+    #08080c;
+  font-family:
+    var(--font-geist-sans),
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
 }
