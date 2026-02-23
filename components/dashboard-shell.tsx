@@ -32,6 +32,7 @@ interface ExportResult {
   url: string;
   name: string;
   trackCount: number;
+  warning?: string;
 }
 
 interface Props {
@@ -616,8 +617,15 @@ export default function DashboardShell({ user }: Props) {
               <div className="flex flex-col items-center gap-3">
                 <div className="inline-flex items-center gap-2.5 rounded-full border border-green-400/20 bg-green-500/10 px-6 py-3 text-sm font-medium text-green-300">
                   <CheckCircleIcon />
-                  Playlist saved · {exportResult.trackCount} tracks on Spotify
+                  {exportResult.trackCount > 0
+                    ? `Playlist saved · ${exportResult.trackCount} tracks on Spotify`
+                    : "Playlist created on Spotify"}
                 </div>
+                {exportResult.warning && (
+                  <p className="max-w-sm text-center text-xs text-amber-300/80">
+                    {exportResult.warning}
+                  </p>
+                )}
                 <a
                   href={exportResult.url}
                   target="_blank"

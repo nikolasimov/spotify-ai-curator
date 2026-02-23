@@ -224,6 +224,9 @@ export async function addTracksToPlaylist(
   playlistId: string,
   trackUris: string[],
 ): Promise<void> {
+  // Spotify max per request is 100 tracks
+  const batch = trackUris.slice(0, 100);
+
   const res = await fetch(
     `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
     {
@@ -232,16 +235,15 @@ export async function addTracksToPlaylist(
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ uris: trackUris }),
+      body: JSON.stringify({ uris: batch }),
     },
   );
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    console.error("Spotify addTracks error:", res.status, errorData);
-    throw new Error(
-      `Failed to add tracks (${res.status}). Permission error or invalid IDs.`,
-    );
+    const spotifyMsg = errorData?.error?.message ?? JSON.stringify(errorData);
+    console.error("Spotify addTracks error:", res.status, spotifyMsg);
+    throw new Error(`Spotify ${res.status}: ${spotifyMsg}`);
   }
 }
 
