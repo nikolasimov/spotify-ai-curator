@@ -22,7 +22,8 @@ export async function GET() {
 
     return NextResponse.json({ recommendations, seeds });
   } catch (err) {
-    console.error("recommendations failed:", err);
-    return NextResponse.json({ error: "something went wrong" }, { status: 500 });
+    const message = err instanceof Error ? err.message : "something went wrong";
+    console.error("recommendations failed:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

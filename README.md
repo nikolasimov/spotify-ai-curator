@@ -18,13 +18,13 @@
 
 ## Tech Stack
 
-| Layer | Tech |
-|---|---|
-| Framework | Next.js 15 (App Router, TypeScript) |
-| Styling | Tailwind CSS v4 |
-| Auth | Spotify OAuth 2.0 + JWT cookies (jose) |
-| AI | GitHub Models API (free inference tokens) |
-| Hosting | Vercel |
+| Layer     | Tech                                      |
+| --------- | ----------------------------------------- |
+| Framework | Next.js 15 (App Router, TypeScript)       |
+| Styling   | Tailwind CSS v4                           |
+| Auth      | Spotify OAuth 2.0 + JWT cookies (jose)    |
+| AI        | GitHub Models API (free inference tokens) |
+| Hosting   | Vercel                                    |
 
 ---
 
@@ -75,14 +75,14 @@ npm run dev
 
 ## Environment Variables
 
-| Variable | Description |
-|---|---|
-| `NEXT_PUBLIC_APP_URL` | Public URL of the app (e.g. `https://spotify-ai-curator.vercel.app`) |
-| `SPOTIFY_CLIENT_ID` | From [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) |
-| `SPOTIFY_CLIENT_SECRET` | From Spotify Developer Dashboard |
-| `NEXTAUTH_SECRET` | Random secret for signing JWT session cookies |
-| `GITHUB_TOKEN` | GitHub personal access token for Models API |
-| `GITHUB_MODELS_ENDPOINT` | `https://models.github.ai/inference` |
+| Variable                 | Description                                                                 |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_APP_URL`    | Public URL of the app (e.g. `https://spotify-ai-curator.vercel.app`)        |
+| `SPOTIFY_CLIENT_ID`      | From [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) |
+| `SPOTIFY_CLIENT_SECRET`  | From Spotify Developer Dashboard                                            |
+| `NEXTAUTH_SECRET`        | Random secret for signing JWT session cookies                               |
+| `GITHUB_TOKEN`           | GitHub personal access token for Models API                                 |
+| `GITHUB_MODELS_ENDPOINT` | `https://models.github.ai/inference`                                        |
 
 ---
 

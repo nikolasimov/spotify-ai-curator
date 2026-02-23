@@ -19,12 +19,12 @@ export default function RecommendationsPanel() {
     setError(null);
     try {
       const res = await fetch("/api/ai/recommend");
-      if (!res.ok) throw new Error("Request failed");
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "request failed");
       setRecs(data.recommendations ?? []);
       setDone(true);
-    } catch {
-      setError("Could not generate recommendations. Check your GitHub token.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "something went wrong");
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,10 @@ export default function RecommendationsPanel() {
             ))}
           </ul>
           <button
-            onClick={() => { setDone(false); setRecs([]); }}
+            onClick={() => {
+              setDone(false);
+              setRecs([]);
+            }}
             className="mx-auto mt-6 flex text-xs text-white/30 hover:text-white/60 transition"
           >
             Regenerate
@@ -87,7 +90,16 @@ export default function RecommendationsPanel() {
 
 function SparkleIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z" />
       <path d="M5 3l.75 2.25L8 6l-2.25.75L5 9l-.75-2.25L2 6l2.25-.75z" />
       <path d="M19 15l.75 2.25L22 18l-2.25.75L19 21l-.75-2.25L16 18l2.25-.75z" />
@@ -97,7 +109,15 @@ function SparkleIcon() {
 
 function Spinner() {
   return (
-    <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      className="animate-spin"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
       <path d="M12 2a10 10 0 0 1 10 10" />
     </svg>

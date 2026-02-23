@@ -28,6 +28,9 @@ export async function getRecommendations(
     .map((t, i) => `${i + 1}. "${t.name}" by ${t.artist}`)
     .join("\n");
 
+  if (!GITHUB_TOKEN) throw new Error("GITHUB_TOKEN is not set");
+
+  // TODO: maybe add genre/mood filtering later
   const response = await client.chat.completions.create({
     model: MODEL,
     response_format: { type: "json_object" },
@@ -37,7 +40,6 @@ export async function getRecommendations(
         content: `You are a music taste expert. Based on someone's top Spotify tracks, suggest 6 songs they'd probably enjoy but haven't listed.
 Only respond with JSON like this - no extra text:
 {"recommendations": [{"name": "song title", "artist": "artist name", "reason": "one sentence why they'd like it"}]}`,
-      // TODO: maybe add genre/mood filtering later
       },
       {
         role: "user",
