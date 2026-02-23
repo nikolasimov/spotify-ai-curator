@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import Image from "next/image";
+import RecommendationsPanel from "@/components/recommendations-panel";
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -58,6 +59,8 @@ export default async function DashboardPage() {
             </p>
           </article>
         </div>
+
+        <RecommendationsPanel />
 
         <a
           href="/api/auth/signout"

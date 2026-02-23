@@ -86,3 +86,28 @@ export async function getSpotifyProfile(
 
   return res.json();
 }
+
+export interface SpotifyTrack {
+  id: string;
+  name: string;
+  artists: { name: string }[];
+  album: { name: string; images: { url: string }[] };
+}
+
+export async function getTopTracks(
+  accessToken: string,
+  limit = 20,
+  timeRange: "short_term" | "medium_term" | "long_term" = "medium_term",
+): Promise<SpotifyTrack[]> {
+  const res = await fetch(
+    `https://api.spotify.com/v1/me/top/tracks?limit=${limit}&time_range=${timeRange}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch top tracks: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.items as SpotifyTrack[];
+}
