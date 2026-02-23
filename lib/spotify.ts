@@ -4,6 +4,8 @@ import {
   SPOTIFY_REDIRECT_URI,
 } from "./config";
 
+// ─── shared types ───────────────────────────────────────────────────────────
+
 export interface SpotifyTokenResponse {
   access_token: string;
   token_type: string;
@@ -20,6 +22,36 @@ export interface SpotifyUserProfile {
   followers: { total: number };
   country: string;
 }
+
+export interface SpotifyTrack {
+  id: string;
+  name: string;
+  artists: { name: string }[];
+  album: { name: string; images: { url: string }[] };
+  external_urls: { spotify: string };
+  uri: string;
+}
+
+export interface SpotifyArtist {
+  id: string;
+  name: string;
+  genres: string[];
+  images: { url: string }[];
+  popularity: number;
+  external_urls: { spotify: string };
+}
+
+export interface SpotifyPlaylist {
+  id: string;
+  name: string;
+  description: string;
+  images: { url: string }[];
+  tracks: { total: number };
+  owner: { display_name: string };
+  external_urls: { spotify: string };
+}
+
+// ─── auth helpers ───────────────────────────────────────────────────────────
 
 function basicAuth() {
   return Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString(
@@ -73,6 +105,8 @@ export async function refreshAccessToken(
   return res.json();
 }
 
+// ─── user data ──────────────────────────────────────────────────────────────
+
 export async function getSpotifyProfile(
   accessToken: string,
 ): Promise<SpotifyUserProfile> {
@@ -85,13 +119,6 @@ export async function getSpotifyProfile(
   }
 
   return res.json();
-}
-
-export interface SpotifyTrack {
-  id: string;
-  name: string;
-  artists: { name: string }[];
-  album: { name: string; images: { url: string }[] };
 }
 
 export async function getTopTracks(
@@ -110,4 +137,106 @@ export async function getTopTracks(
 
   const data = await res.json();
   return data.items as SpotifyTrack[];
+}
+
+export async function getTopArtists(
+  accessToken: string,
+  limit = 20,
+  timeRange: "short_term" | "medium_term" | "long_term" = "medium_term",
+): Promise<SpotifyArtist[]> {
+  const res = await fetch(
+    `https://api.spotify.com/v1/me/top/artists?limit=${limit}&time_range=${timeRange}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch top artists: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.items as SpotifyArtist[];
+}
+
+// ─── playlists ──────────────────────────────────────────────────────────────
+
+export async function getUserPlaylists(
+  accessToken: string,
+  limit = 50,
+): Promise<SpotifyPlaylist[]> {
+  const res = await fetch(
+    `https://api.spotify.com/v1/me/playlists?limit=${limit}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch playlists: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.items as SpotifyPlaylist[];
+}
+
+export async function createPlaylist(
+  accessToken: string,
+  userId: string,
+  name: string,
+  description = "",
+): Promise<{ id: string; external_urls: { spotify: string } }> {
+  const res = await fetch(
+    `https://api.spotify.com/v1/users/${userId}/playlists`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name, description, public: false }),
+    },
+  );
+
+  if (!res.ok) {
+    throw new Error(`Failed to create playlist: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function addTracksToPlaylist(
+  accessToken: string,
+  playlistId: string,
+  trackUris: string[],
+): Promise<void> {
+  const res = await fetch(
+    `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ uris: trackUris }),
+    },
+  );
+
+  if (!res.ok) {
+    throw new Error(`Failed to add tracks to playlist: ${res.status}`);
+  }
+}
+
+// ─── search ─────────────────────────────────────────────────────────────────
+
+export async function searchTrack(
+  accessToken: string,
+  query: string,
+): Promise<string | null> {
+  const res = await fetch(
+    `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=1`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  const track = data.tracks?.items?.[0];
+  return track?.uri ?? null;
 }

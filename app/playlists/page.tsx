@@ -2,9 +2,9 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import CursorTrail from "@/components/cursor-trail";
 import Nav from "@/components/nav";
-import DashboardShell from "@/components/dashboard-shell";
+import PlaylistsShell from "@/components/playlists-shell";
 
-export default async function DashboardPage() {
+export default async function PlaylistsPage() {
   const session = await getSession();
   if (!session) redirect("/");
 
@@ -14,7 +14,7 @@ export default async function DashboardPage() {
       <div className="relative z-10">
         <Nav />
         <div className="px-6 py-10">
-          <DashboardShell user={session.user} />
+          <PlaylistsShell />
         </div>
       </div>
     </main>
