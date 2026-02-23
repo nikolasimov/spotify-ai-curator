@@ -415,8 +415,18 @@ export default function DashboardShell({ user }: Props) {
 
       {/* ── error ─────────────────────────────────────────────────────── */}
       {error && (
-        <div className="mb-8 rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-center text-sm text-red-300">
-          {error}
+        <div className="mb-8 flex flex-col items-center justify-center gap-3 rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-center text-sm text-red-300">
+          <p>{error}</p>
+          {(error.includes("sign out") ||
+            error.includes("401") ||
+            error.includes("403")) && (
+            <a
+              href="/api/auth/signout"
+              className="rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-2 text-xs text-red-200 hover:bg-red-500/20"
+            >
+              Sign out & Reconnect
+            </a>
+          )}
         </div>
       )}
 

@@ -20,6 +20,7 @@ interface Playlist {
 export default function PlaylistsShell() {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -27,10 +28,15 @@ export default function PlaylistsShell() {
         const res = await fetch("/api/spotify/playlists");
         if (res.ok) {
           const data = await res.json();
-          setPlaylists(data.playlists);
+          setPlaylists(data.playlists || []);
+        } else {
+          const data = await res.json().catch(() => ({}));
+          setError(
+            data.error || "Failed to load playlists. Try signing in again.",
+          );
         }
-      } catch {
-        // silently fail
+      } catch (err) {
+        setError("Failed to load playlists.");
       } finally {
         setLoading(false);
       }
@@ -46,6 +52,20 @@ export default function PlaylistsShell() {
         <span className="ml-2 text-sm text-white/40">
           Loading your playlists...
         </span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <p className="mb-4 text-sm text-red-300">{error}</p>
+        <a
+          href="/api/auth/signout"
+          className="rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-2 text-xs text-red-200 hover:bg-red-500/20"
+        >
+          Sign out & Reconnect
+        </a>
       </div>
     );
   }
@@ -77,7 +97,7 @@ export default function PlaylistsShell() {
           return (
             <a
               key={pl.id}
-              href={pl.external_urls.spotify}
+              href={pl.external_urls?.spotify ?? "#"}
               target="_blank"
               rel="noopener noreferrer"
               className="group rounded-2xl border border-white/8 bg-white/[0.02] p-4 transition hover:border-white/15 hover:bg-white/[0.05]"
@@ -100,7 +120,8 @@ export default function PlaylistsShell() {
                 {pl.name}
               </p>
               <p className="mt-0.5 text-xs text-white/30">
-                {pl.tracks.total} tracks · {pl.owner.display_name}
+                {pl.tracks?.total ?? 0} tracks ·{" "}
+                {pl.owner?.display_name ?? "Unknown"}
               </p>
             </a>
           );

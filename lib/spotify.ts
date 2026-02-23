@@ -169,7 +169,11 @@ export async function getUserPlaylists(
   );
 
   if (!res.ok) {
-    throw new Error(`Failed to fetch playlists: ${res.status}`);
+    const errorData = await res.json().catch(() => ({}));
+    console.error("Spotify playlists error:", res.status, errorData);
+    throw new Error(
+      `Failed to fetch playlists (${res.status}). Try signing out and back in.`,
+    );
   }
 
   const data = await res.json();
@@ -182,23 +186,32 @@ export async function createPlaylist(
   name: string,
   description = "",
 ): Promise<{ id: string; external_urls: { spotify: string } }> {
-  const res = await fetch(
-    `https://api.spotify.com/v1/users/${userId}/playlists`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
+  try {
+    const res = await fetch(
+      `https://api.spotify.com/v1/users/${userId}/playlists`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, description, public: false }),
       },
-      body: JSON.stringify({ name, description, public: false }),
-    },
-  );
+    );
 
-  if (!res.ok) {
-    throw new Error(`Failed to create playlist: ${res.status}`);
+    if (!res.ok) {
+      // return detailed error for better debugging
+      const errorData = await res.json().catch(() => ({}));
+      console.error("Spotify createPlaylist error:", res.status, errorData);
+      throw new Error(
+        `Failed to create playlist (${res.status}). You may need to sign out and sign in again to update permissions.`,
+      );
+    }
+
+    return res.json();
+  } catch (err) {
+    throw err;
   }
-
-  return res.json();
 }
 
 export async function addTracksToPlaylist(
@@ -219,7 +232,11 @@ export async function addTracksToPlaylist(
   );
 
   if (!res.ok) {
-    throw new Error(`Failed to add tracks to playlist: ${res.status}`);
+    const errorData = await res.json().catch(() => ({}));
+    console.error("Spotify addTracks error:", res.status, errorData);
+    throw new Error(
+      `Failed to add tracks (${res.status}). Permission error or invalid IDs.`,
+    );
   }
 }
 
