@@ -12,36 +12,11 @@ interface ExportBody {
   recommendations: { name: string; artist: string }[];
 }
 
-const REQUIRED_SCOPES = ["playlist-modify-public", "playlist-modify-private"];
-
 export async function POST(req: NextRequest) {
   const session = await getSession();
 
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // check if the session has the right scopes to create playlists
-  const grantedScopes = (session.scope ?? "").split(" ");
-  const missingScopes = REQUIRED_SCOPES.filter(
-    (s) => !grantedScopes.includes(s),
-  );
-
-  if (missingScopes.length > 0) {
-    console.warn(
-      "missing scopes for export:",
-      missingScopes,
-      "granted:",
-      grantedScopes,
-    );
-    return NextResponse.json(
-      {
-        error:
-          "Your session doesn't have permission to create playlists. Reconnecting to Spotify...",
-        action: "reauth",
-      },
-      { status: 403 },
-    );
   }
 
   try {
@@ -110,13 +85,11 @@ export async function POST(req: NextRequest) {
     const message = err instanceof Error ? err.message : "export failed";
     console.error("export failed:", message);
 
-    // if the Spotify API itself returned 403, it means scopes are wrong
     if (message.includes("403")) {
       return NextResponse.json(
         {
           error:
-            "Spotify rejected the request. Reconnecting to grant playlist permissions...",
-          action: "reauth",
+            "Spotify denied playlist creation. Please sign out and sign back in to grant the required permissions.",
         },
         { status: 403 },
       );

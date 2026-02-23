@@ -161,15 +161,6 @@ export default function DashboardShell({ user }: Props) {
       });
 
       const data = await res.json();
-
-      // if the server says we need to re-authenticate, do it automatically
-      if (data.action === "reauth") {
-        // clear the stale session, then redirect to Spotify auth
-        await fetch("/api/auth/signout");
-        window.location.href = "/api/auth/signin/spotify";
-        return;
-      }
-
       if (!res.ok) throw new Error(data.error ?? "export failed");
       setExportResult(data);
     } catch (err) {
@@ -178,6 +169,33 @@ export default function DashboardShell({ user }: Props) {
       setExporting(false);
     }
   }, [recommendations, prompt]);
+
+  // ─── generate a display name for the playlist ──────────────────────────
+
+  const playlistDisplayName = (() => {
+    if (!prompt.trim()) return `AI Curator Picks`;
+    const lower = prompt.toLowerCase();
+    const moods: [RegExp, string][] = [
+      [/chill|relax|calm|peaceful|mellow/, "Chill Vibes"],
+      [/sad|melanchol|lonely|heartbr|cry/, "In My Feelings"],
+      [/hype|energy|pump|workout|gym|run/, "All Gas"],
+      [/happy|joy|upbeat|cheerful|good mood/, "Good Energy"],
+      [/focus|study|concentrate|work|code/, "Deep Focus"],
+      [/driv|road|cruise|highway/, "Road Trip Mix"],
+      [/nostalg|throwback|old school|retro/, "Nostalgia Trip"],
+      [/party|dance|club|friday|weekend/, "Let's Go"],
+      [/sleep|dream|ambient|drift/, "Drift Off"],
+      [/rain|storm|cozy|autumn|winter/, "Rainy Day"],
+      [/love|romantic|crush|date/, "Heartstrings"],
+      [/angry|rage|frustrated|heavy/, "Burn It Down"],
+    ];
+    for (const [pattern, title] of moods) {
+      if (pattern.test(lower)) return title;
+    }
+    const words = prompt.trim().split(/\s+/).slice(0, 5).join(" ");
+    const capped = words.charAt(0).toUpperCase() + words.slice(1);
+    return capped.length > 30 ? `${capped.slice(0, 28)}…` : capped;
+  })();
 
   // ─── helpers ────────────────────────────────────────────────────────────
 
@@ -442,73 +460,162 @@ export default function DashboardShell({ user }: Props) {
         <div className="mb-8 flex flex-col items-center justify-center gap-3 rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-center text-sm text-red-300">
           <p>{error}</p>
           {(error.includes("sign out") ||
-            error.includes("401") ||
-            error.includes("403")) && (
+            error.includes("permission") ||
+            error.includes("denied")) && (
             <a
-              href="/api/auth/signout"
+              href="/api/auth/signin/spotify"
               className="rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-2 text-xs text-red-200 hover:bg-red-500/20"
             >
-              Sign out & Reconnect
+              Reconnect to Spotify
             </a>
           )}
         </div>
       )}
 
-      {/* ── recommendations ───────────────────────────────────────────── */}
+      {/* ── recommendations (playlist view) ────────────────────────────── */}
       {recommendations.length > 0 && (
         <section className="mb-12">
-          <h2 className="mb-6 text-center text-xs font-semibold uppercase tracking-widest text-violet-300">
-            Curated for you
-          </h2>
+          {/* ── playlist header ─────────────────────────────────────────── */}
+          <div className="mb-6 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-violet-600/20 via-indigo-600/15 to-fuchsia-600/10 p-6 backdrop-blur-xl sm:p-8">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
+              {/* album-art style square */}
+              <div className="flex h-36 w-36 flex-shrink-0 items-center justify-center self-center rounded-xl bg-gradient-to-br from-violet-500/40 to-indigo-700/40 shadow-xl shadow-violet-900/30 sm:self-auto">
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-violet-200/60"
+                >
+                  <path d="M9 18V5l12-2v13" />
+                  <circle cx="6" cy="18" r="3" />
+                  <circle cx="18" cy="16" r="3" />
+                </svg>
+              </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {recommendations.map((rec, i) => (
-              <article
-                key={i}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-xl"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-white">
-                      {rec.name}
-                    </p>
-                    <p className="truncate text-sm text-white/50">
-                      {rec.artist}
-                    </p>
-                  </div>
-                  <span className="ml-3 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-xs text-violet-400">
-                    {i + 1}
+              <div className="min-w-0 flex-1 text-center sm:text-left">
+                <p className="text-xs font-medium uppercase tracking-widest text-violet-300/60">
+                  AI Generated Playlist
+                </p>
+                <h2 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
+                  {playlistDisplayName}
+                </h2>
+                {prompt.trim() && (
+                  <p className="mt-2 line-clamp-2 text-sm text-white/40">
+                    &ldquo;{prompt}&rdquo;
+                  </p>
+                )}
+                <div className="mt-3 flex items-center justify-center gap-3 text-xs text-white/30 sm:justify-start">
+                  <span>
+                    {recommendations.length} track
+                    {recommendations.length !== 1 ? "s" : ""}
                   </span>
+                  <span className="text-white/15">•</span>
+                  <span>Curated by AI</span>
+                  {(selectedTracks.length > 0 || selectedArtists.length > 0) && (
+                    <>
+                      <span className="text-white/15">•</span>
+                      <span>
+                        Based on{" "}
+                        {selectedTracks.length > 0 &&
+                          `${selectedTracks.length} track${selectedTracks.length !== 1 ? "s" : ""}`}
+                        {selectedTracks.length > 0 &&
+                          selectedArtists.length > 0 &&
+                          " & "}
+                        {selectedArtists.length > 0 &&
+                          `${selectedArtists.length} artist${selectedArtists.length !== 1 ? "s" : ""}`}
+                      </span>
+                    </>
+                  )}
                 </div>
-                <p className="mt-3 text-xs leading-5 text-white/35">
+              </div>
+            </div>
+          </div>
+
+          {/* ── track list ──────────────────────────────────────────────── */}
+          <div className="overflow-hidden rounded-xl border border-white/8 bg-white/[0.02]">
+            {/* header row */}
+            <div className="grid grid-cols-[2rem_1fr_auto] items-center gap-3 border-b border-white/8 px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-white/25 sm:grid-cols-[2rem_1fr_1fr_auto]">
+              <span className="text-center">#</span>
+              <span>Title</span>
+              <span className="hidden sm:block">Why this song</span>
+              <span className="w-8" />
+            </div>
+
+            {/* track rows */}
+            {recommendations.map((rec, i) => (
+              <div
+                key={i}
+                className="group grid grid-cols-[2rem_1fr_auto] items-center gap-3 border-b border-white/[0.04] px-4 py-3 transition last:border-b-0 hover:bg-white/[0.03] sm:grid-cols-[2rem_1fr_1fr_auto]"
+              >
+                {/* number */}
+                <span className="text-center text-sm tabular-nums text-white/25 group-hover:text-white/40">
+                  {i + 1}
+                </span>
+
+                {/* title + artist */}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-white">
+                    {rec.name}
+                  </p>
+                  <p className="truncate text-xs text-white/40">
+                    {rec.artist}
+                  </p>
+                </div>
+
+                {/* reason (hidden on mobile) */}
+                <p className="hidden truncate text-xs text-white/25 sm:block">
                   {rec.reason}
                 </p>
-              </article>
+
+                {/* music note icon */}
+                <div className="flex h-8 w-8 items-center justify-center rounded-full text-white/15 group-hover:text-white/30">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 18V5l12-2v13" />
+                    <circle cx="6" cy="18" r="3" />
+                    <circle cx="18" cy="16" r="3" />
+                  </svg>
+                </div>
+              </div>
             ))}
           </div>
 
-          {/* export to Spotify */}
-          <div className="mt-8 text-center">
+          {/* ── export actions ──────────────────────────────────────────── */}
+          <div className="mt-6 flex flex-col items-center gap-4">
             {exportResult ? (
-              <div className="inline-flex flex-col items-center gap-2">
-                <div className="flex items-center gap-2 rounded-xl border border-green-400/20 bg-green-500/10 px-5 py-3 text-sm text-green-300">
+              <div className="flex flex-col items-center gap-3">
+                <div className="inline-flex items-center gap-2.5 rounded-full border border-green-400/20 bg-green-500/10 px-6 py-3 text-sm font-medium text-green-300">
                   <CheckCircleIcon />
-                  Saved {exportResult.trackCount} tracks to Spotify
+                  Playlist saved · {exportResult.trackCount} tracks on Spotify
                 </div>
                 <a
                   href={exportResult.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-green-400/60 transition hover:text-green-300"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#1DB954] px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-[#1ed760]"
                 >
-                  Open &ldquo;{exportResult.name}&rdquo; on Spotify →
+                  <SpotifyIcon />
+                  Open &ldquo;{exportResult.name}&rdquo; in Spotify
                 </a>
               </div>
             ) : (
               <button
                 onClick={handleExport}
                 disabled={exporting}
-                className="inline-flex items-center gap-2 rounded-xl border border-green-400/30 bg-green-500/10 px-6 py-3 text-sm font-medium text-green-300 transition hover:bg-green-500/20 disabled:opacity-50"
+                className="inline-flex items-center gap-2.5 rounded-full bg-[#1DB954] px-8 py-3 text-sm font-semibold text-black shadow-lg shadow-green-900/20 transition hover:bg-[#1ed760] hover:shadow-green-900/30 disabled:opacity-50"
               >
                 {exporting ? (
                   <>
@@ -523,10 +630,7 @@ export default function DashboardShell({ user }: Props) {
                 )}
               </button>
             )}
-          </div>
 
-          {/* start over */}
-          <div className="mt-4 text-center">
             <button
               onClick={() => {
                 setRecommendations([]);
@@ -534,7 +638,7 @@ export default function DashboardShell({ user }: Props) {
               }}
               className="text-xs text-white/25 transition hover:text-white/50"
             >
-              Start over
+              Generate again
             </button>
           </div>
         </section>
