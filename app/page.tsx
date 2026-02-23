@@ -36,70 +36,74 @@ export default function Home() {
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-20">
       <CursorTrail />
       <div className="relative z-10 flex w-full flex-col items-center">
-      {/* centered hero */}
-      <section className="flex w-full max-w-2xl flex-col items-center text-center">
-        <h1 className="text-5xl font-bold tracking-tight text-white lg:text-6xl">
-          Spotify{" "}
-          <span className="bg-gradient-to-r from-violet-400 via-purple-300 to-indigo-400 bg-clip-text text-transparent">
-            AI Curator
+        {/* centered hero */}
+        <section className="flex w-full max-w-2xl flex-col items-center text-center">
+          <h1 className="text-5xl font-bold tracking-tight text-white lg:text-6xl">
+            Spotify{" "}
+            <span className="bg-gradient-to-r from-violet-400 via-purple-300 to-indigo-400 bg-clip-text text-transparent">
+              AI Curator
+            </span>
+          </h1>
+
+          <span className="mt-4 inline-flex rounded-full border border-violet-300/30 bg-violet-400/10 px-3 py-1 text-xs font-medium tracking-widest text-violet-300 uppercase">
+            Portfolio Project
           </span>
-        </h1>
 
-        <span className="mt-4 inline-flex rounded-full border border-violet-300/30 bg-violet-400/10 px-3 py-1 text-xs font-medium tracking-widest text-violet-300 uppercase">
-          Portfolio Project
-        </span>
+          <p className="mt-6 text-base leading-7 text-white/60 lg:text-lg">
+            Connect your Spotify account to get personalised playlists and music
+            recommendations driven by your actual listening habits.
+          </p>
 
-        <p className="mt-6 text-base leading-7 text-white/60 lg:text-lg">
-          Connect your Spotify account to get personalised playlists and music
-          recommendations driven by your actual listening habits.
-        </p>
-
-        {/* tech badges */}
-        <div className="mt-7 flex flex-wrap justify-center gap-2 text-xs">
-          {["Next.js", "TypeScript", "Docker", "Spotify API", "GitHub AI"].map(
-            (tag) => (
+          {/* tech badges */}
+          <div className="mt-7 flex flex-wrap justify-center gap-2 text-xs">
+            {[
+              "Next.js",
+              "TypeScript",
+              "Docker",
+              "Spotify API",
+              "GitHub AI",
+            ].map((tag) => (
               <span
                 key={tag}
                 className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70"
               >
                 {tag}
               </span>
-            ),
-          )}
-        </div>
+            ))}
+          </div>
 
-        {/* CTA */}
-        <div className="mt-10">
-          <a
-            href="/api/auth/signin/spotify"
-            className="group relative inline-flex items-center gap-3 overflow-hidden rounded-2xl border border-green-400/40 bg-gradient-to-br from-green-500/20 to-emerald-600/10 px-7 py-3.5 text-sm font-semibold text-green-300 shadow-lg shadow-green-900/20 backdrop-blur-sm"
-          >
-            <SpotifyIcon />
-            <span>Connect with Spotify</span>
-            <span className="ml-1 text-green-400/70">&rarr;</span>
-          </a>
-        </div>
-      </section>
-
-      {/* feature cards */}
-      <section className="mx-auto mt-20 w-full max-w-4xl">
-        <p className="mb-6 text-center text-xs font-medium tracking-widest text-white/30 uppercase">
-          What it does
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {features.map((f) => (
-            <article
-              key={f.title}
-              className="rounded-2xl border border-white/8 bg-white/4 p-5 backdrop-blur-xl"
+          {/* CTA */}
+          <div className="mt-10">
+            <a
+              href="/api/auth/signin/spotify"
+              className="group relative inline-flex items-center gap-3 overflow-hidden rounded-2xl border border-green-400/40 bg-gradient-to-br from-green-500/20 to-emerald-600/10 px-7 py-3.5 text-sm font-semibold text-green-300 shadow-lg shadow-green-900/20 backdrop-blur-sm"
             >
-              <h3 className="text-sm font-semibold text-white">{f.title}</h3>
-              <p className="mt-1.5 text-sm leading-6 text-white/60">
-                {f.description}
-              </p>
-            </article>
-          ))}
-        </div>
-      </section>
+              <SpotifyIcon />
+              <span>Connect with Spotify</span>
+              <span className="ml-1 text-green-400/70">&rarr;</span>
+            </a>
+          </div>
+        </section>
+
+        {/* feature cards */}
+        <section className="mx-auto mt-20 w-full max-w-4xl">
+          <p className="mb-6 text-center text-xs font-medium tracking-widest text-white/30 uppercase">
+            What it does
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {features.map((f) => (
+              <article
+                key={f.title}
+                className="rounded-2xl border border-white/8 bg-white/4 p-5 backdrop-blur-xl"
+              >
+                <h3 className="text-sm font-semibold text-white">{f.title}</h3>
+                <p className="mt-1.5 text-sm leading-6 text-white/60">
+                  {f.description}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
       </div>
     </main>
   );
