@@ -177,7 +177,11 @@ export async function getUserPlaylists(
   }
 
   const data = await res.json();
-  return data.items as SpotifyPlaylist[];
+  // Spotify can return null items for deleted/unavailable playlists
+  const items = (data.items ?? []).filter(
+    (item: SpotifyPlaylist | null) => item !== null,
+  );
+  return items as SpotifyPlaylist[];
 }
 
 export async function createPlaylist(

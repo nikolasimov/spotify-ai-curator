@@ -161,6 +161,15 @@ export default function DashboardShell({ user }: Props) {
       });
 
       const data = await res.json();
+
+      // if the server says we need to re-authenticate, do it automatically
+      if (data.action === "reauth") {
+        // clear the stale session, then redirect to Spotify auth
+        await fetch("/api/auth/signout");
+        window.location.href = "/api/auth/signin/spotify";
+        return;
+      }
+
       if (!res.ok) throw new Error(data.error ?? "export failed");
       setExportResult(data);
     } catch (err) {

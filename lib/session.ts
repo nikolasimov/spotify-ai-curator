@@ -18,6 +18,7 @@ export interface Session {
   accessToken: string;
   refreshToken: string;
   expiresAt: number;
+  scope: string;
   user: SpotifyUser;
 }
 
@@ -66,6 +67,8 @@ export async function getSession(): Promise<Session | null> {
           // Spotify may or may not return a new refresh token
           refreshToken: refreshed.refresh_token ?? session.refreshToken,
           expiresAt: Date.now() + refreshed.expires_in * 1000,
+          // refreshed tokens keep the same scopes as the original auth
+          scope: session.scope ?? "",
         };
 
         // persist the refreshed session

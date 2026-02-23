@@ -15,10 +15,13 @@ export async function GET(req: NextRequest) {
     const tokens = await exchangeCode(code);
     const profile = await getSpotifyProfile(tokens.access_token);
 
+    console.log("granted scopes:", tokens.scope);
+
     await createSession({
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
       expiresAt: Date.now() + tokens.expires_in * 1000,
+      scope: tokens.scope ?? "",
       user: {
         id: profile.id,
         name: profile.display_name,
