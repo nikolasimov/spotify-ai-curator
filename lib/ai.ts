@@ -1,9 +1,7 @@
 import OpenAI from "openai";
 import { GITHUB_TOKEN, GITHUB_MODELS_ENDPOINT } from "./config";
 
-// GitHub Models is accessed via the OpenAI-compatible API.
-// Set baseURL to GitHub's inference endpoint and use your GitHub PAT as the key.
-// Pick any model from: https://github.com/marketplace/models
+// using GitHub Models free tier - swappable for any model on the marketplace
 const MODEL = "openai/gpt-4o-mini";
 
 const client = new OpenAI({
@@ -36,11 +34,10 @@ export async function getRecommendations(
     messages: [
       {
         role: "system",
-        content: `You are a music recommendation engine. 
-Given a user's top Spotify tracks, suggest 6 new songs they haven't listed that they would likely enjoy.
-Respond ONLY with valid JSON in this exact shape:
-{"recommendations": [{"name": "...", "artist": "...", "reason": "..."}]}
-Reasons should be 1 short sentence explaining the connection to their taste.`,
+        content: `You are a music taste expert. Based on someone's top Spotify tracks, suggest 6 songs they'd probably enjoy but haven't listed.
+Only respond with JSON like this - no extra text:
+{"recommendations": [{"name": "song title", "artist": "artist name", "reason": "one sentence why they'd like it"}]}`,
+      // TODO: maybe add genre/mood filtering later
       },
       {
         role: "user",

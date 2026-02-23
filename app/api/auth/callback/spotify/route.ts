@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.redirect(`${APP_URL}/dashboard`);
   } catch (err) {
-    console.error("[auth/callback] error:", err);
+    console.error("spotify callback failed:", err);
     return NextResponse.redirect(`${APP_URL}?error=auth_failed`);
   }
 }

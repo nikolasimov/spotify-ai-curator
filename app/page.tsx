@@ -25,9 +25,9 @@ const features = [
       "Curates and saves new playlists directly to your Spotify library based on your listening patterns.",
   },
   {
-    title: "Dockerized",
+    title: "Deployed on Vercel",
     description:
-      "Fully containerized with Docker and Compose. Clone the repo, fill in env vars, and run with a single command.",
+      "Hosted on Vercel for automatic HTTPS and instant deploys on every push to main.",
   },
 ];
 
@@ -59,7 +59,7 @@ export default function Home() {
             {[
               "Next.js",
               "TypeScript",
-              "Docker",
+              "Vercel",
               "Spotify API",
               "GitHub AI",
             ].map((tag) => (

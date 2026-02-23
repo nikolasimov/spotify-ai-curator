@@ -41,7 +41,7 @@ export default function RecommendationsPanel() {
           {loading ? (
             <>
               <Spinner />
-              Analysing your taste…
+              Analysing your tracks...
             </>
           ) : (
             <>

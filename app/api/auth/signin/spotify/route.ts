@@ -6,8 +6,8 @@ import {
 } from "@/lib/config";
 
 export function GET() {
-  // Log the exact redirect URI so it can be copy-pasted into the Spotify dashboard
-  console.log("[spotify signin] redirect_uri:", SPOTIFY_REDIRECT_URI);
+  // useful for debugging - make sure this matches exactly what's in the Spotify dashboard
+  console.log("redirect_uri:", SPOTIFY_REDIRECT_URI);
 
   const params = new URLSearchParams({
     client_id: SPOTIFY_CLIENT_ID,

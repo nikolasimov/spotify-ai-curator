@@ -55,7 +55,7 @@ export default async function DashboardPage() {
               Next up
             </p>
             <p className="mt-2 text-sm text-white/80">
-              Taste analysis and AI recommendations — coming soon.
+              Hit the button below to get AI-powered song recommendations based on your top tracks.
             </p>
           </article>
         </div>

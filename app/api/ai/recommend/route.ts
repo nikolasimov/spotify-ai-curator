@@ -22,10 +22,7 @@ export async function GET() {
 
     return NextResponse.json({ recommendations, seeds });
   } catch (err) {
-    console.error("[ai/recommend] error:", err);
-    return NextResponse.json(
-      { error: "Failed to generate recommendations" },
-      { status: 500 },
-    );
+    console.error("recommendations failed:", err);
+    return NextResponse.json({ error: "something went wrong" }, { status: 500 });
   }
 }
