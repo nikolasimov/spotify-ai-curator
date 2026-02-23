@@ -181,14 +181,6 @@ export default function DashboardShell({ user }: Props) {
       });
 
       const data = await res.json();
-
-      // handle re-auth: sign out via POST (no redirect), then navigate
-      if (data.action === "reauth") {
-        await fetch("/api/auth/signout", { method: "POST" });
-        window.location.href = "/api/auth/signin/spotify";
-        return;
-      }
-
       if (!res.ok) throw new Error(data.error ?? "export failed");
       setExportResult(data);
     } catch (err) {
@@ -458,18 +450,8 @@ export default function DashboardShell({ user }: Props) {
 
       {/* ── error ─────────────────────────────────────────────────────── */}
       {error && (
-        <div className="mb-8 flex flex-col items-center justify-center gap-3 rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-center text-sm text-red-300">
+        <div className="mb-8 rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-center text-sm text-red-300">
           <p>{error}</p>
-          {(error.includes("sign out") ||
-            error.includes("permission") ||
-            error.includes("denied")) && (
-            <a
-              href="/api/auth/signin/spotify"
-              className="rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-2 text-xs text-red-200 hover:bg-red-500/20"
-            >
-              Reconnect to Spotify
-            </a>
-          )}
         </div>
       )}
 

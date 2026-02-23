@@ -204,11 +204,11 @@ export async function createPlaylist(
     );
 
     if (!res.ok) {
-      // return detailed error for better debugging
       const errorData = await res.json().catch(() => ({}));
-      console.error("Spotify createPlaylist error:", res.status, errorData);
+      const detail = errorData?.error?.message ?? JSON.stringify(errorData);
+      console.error("Spotify createPlaylist error:", res.status, detail);
       throw new Error(
-        `Failed to create playlist (${res.status}). You may need to sign out and sign in again to update permissions.`,
+        `Spotify error ${res.status}: ${detail}`,
       );
     }
 

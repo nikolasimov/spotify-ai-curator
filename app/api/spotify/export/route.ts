@@ -56,18 +56,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "export failed";
     console.error("export failed:", message);
-
-    if (message.includes("403")) {
-      return NextResponse.json(
-        {
-          error:
-            "Spotify denied playlist creation. Please sign out and sign back in to grant the required permissions.",
-          action: "reauth",
-        },
-        { status: 403 },
-      );
-    }
-
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
