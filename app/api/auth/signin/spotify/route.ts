@@ -14,7 +14,8 @@ export function GET() {
     response_type: "code",
     redirect_uri: SPOTIFY_REDIRECT_URI,
     scope: SPOTIFY_SCOPES,
-    show_dialog: "false",
+    // force consent screen so updated scopes are always granted
+    show_dialog: "true",
   });
 
   const spotifyAuthUrl = `https://accounts.spotify.com/authorize?${params.toString()}`;

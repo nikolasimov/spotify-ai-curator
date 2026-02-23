@@ -244,16 +244,47 @@ export async function addTracksToPlaylist(
 
 export async function searchTrack(
   accessToken: string,
-  query: string,
-): Promise<string | null> {
-  const res = await fetch(
-    `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=1`,
+  trackName: string,
+  artistName: string,
+): Promise<{ uri: string; name: string; artist: string } | null> {
+  // clean up the query — strip stuff like "(feat. X)", "[Deluxe]", etc.
+  const cleanName = trackName.replace(/\s*[\(\[][^\)\]]*[\)\]]\s*/g, "").trim();
+  const cleanArtist = artistName.replace(/\s*[\(\[][^\)\]]*[\)\]]\s*/g, "").trim();
+
+  // try exact search first: track:"name" artist:"artist"
+  const exactQuery = `track:${cleanName} artist:${cleanArtist}`;
+  const exactRes = await fetch(
+    `https://api.spotify.com/v1/search?q=${encodeURIComponent(exactQuery)}&type=track&limit=3`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
 
-  if (!res.ok) return null;
+  if (exactRes.ok) {
+    const data = await exactRes.json();
+    const track = data.tracks?.items?.[0];
+    if (track?.uri) {
+      return {
+        uri: track.uri,
+        name: track.name,
+        artist: track.artists?.[0]?.name ?? artistName,
+      };
+    }
+  }
 
-  const data = await res.json();
-  const track = data.tracks?.items?.[0];
-  return track?.uri ?? null;
+  // fallback: looser search with just the text
+  const fallbackRes = await fetch(
+    `https://api.spotify.com/v1/search?q=${encodeURIComponent(`${cleanName} ${cleanArtist}`)}&type=track&limit=3`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+
+  if (!fallbackRes.ok) return null;
+
+  const fallbackData = await fallbackRes.json();
+  const fallbackTrack = fallbackData.tracks?.items?.[0];
+  if (!fallbackTrack?.uri) return null;
+
+  return {
+    uri: fallbackTrack.uri,
+    name: fallbackTrack.name,
+    artist: fallbackTrack.artists?.[0]?.name ?? artistName,
+  };
 }
