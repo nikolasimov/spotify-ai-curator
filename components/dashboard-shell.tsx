@@ -62,6 +62,7 @@ export default function DashboardShell({ user }: Props) {
   // export
   const [exporting, setExporting] = useState(false);
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
+  const [needsReauth, setNeedsReauth] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -181,6 +182,12 @@ export default function DashboardShell({ user }: Props) {
       });
 
       const data = await res.json();
+
+      if (data.needsReauth) {
+        setNeedsReauth(true);
+        return;
+      }
+
       if (!res.ok) throw new Error(data.error ?? "export failed");
       setExportResult(data);
     } catch (err) {
@@ -621,6 +628,28 @@ export default function DashboardShell({ user }: Props) {
                   Open &ldquo;{exportResult.name}&rdquo; in Spotify
                 </a>
               </div>
+            ) : needsReauth ? (
+              /* ── needs fresh Spotify auth with playlist scopes ────────── */
+              <div className="flex flex-col items-center gap-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-6 py-5 text-center">
+                <p className="text-sm font-medium text-amber-200">
+                  Spotify needs one-time permission to create playlists
+                </p>
+                <p className="max-w-xs text-xs text-amber-200/60">
+                  Your current session was created before playlist permissions
+                  were added. Click below to reconnect — Spotify will ask you
+                  to approve playlist access, then you&apos;ll come right back.
+                </p>
+                <a
+                  href="/api/auth/signin/spotify"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#1DB954] px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-[#1ed760]"
+                >
+                  <SpotifyIcon />
+                  Grant playlist permission
+                </a>
+                <p className="text-xs text-amber-200/40">
+                  You&apos;ll need to generate your playlist again after reconnecting.
+                </p>
+              </div>
             ) : (
               <button
                 onClick={handleExport}
@@ -650,6 +679,7 @@ export default function DashboardShell({ user }: Props) {
                 setExportResult(null);
                 setPlaylistName("");
                 setPlaylistDescription("");
+                setNeedsReauth(false);
               }}
               className="text-xs text-white/25 transition hover:text-white/50"
             >

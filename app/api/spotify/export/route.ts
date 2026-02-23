@@ -15,6 +15,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // verify the token has playlist write scopes before hitting Spotify
+  // (tokens from before these scopes were added will be missing them)
+  const grantedScopes = (session.scope ?? "").split(" ").filter(Boolean);
+  const needsPlaylistScope =
+    grantedScopes.length > 0 && // empty = old session, let it try
+    !grantedScopes.includes("playlist-modify-public") &&
+    !grantedScopes.includes("playlist-modify-private");
+
+  if (needsPlaylistScope) {
+    return NextResponse.json(
+      { needsReauth: true, error: "playlist-scope-missing" },
+      { status: 403 },
+    );
+  }
+
   try {
     const body: ExportBody = await req.json();
     const { playlistName, playlistDescription, tracks } = body;
@@ -56,6 +71,13 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "export failed";
     console.error("export failed:", message);
+    // Spotify itself returned 403 — same root cause: missing scopes
+    if (message.includes("403")) {
+      return NextResponse.json(
+        { needsReauth: true, error: "playlist-scope-missing" },
+        { status: 403 },
+      );
+    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
