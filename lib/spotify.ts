@@ -186,36 +186,37 @@ export async function getUserPlaylists(
 
 export async function createPlaylist(
   accessToken: string,
-  userId: string,
   name: string,
   description = "",
 ): Promise<{ id: string; external_urls: { spotify: string } }> {
-  try {
-    const res = await fetch(
-      `https://api.spotify.com/v1/users/${userId}/playlists`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, description, public: false }),
+  const res = await fetch(
+    "https://api.spotify.com/v1/me/playlists",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({ name, description, public: false }),
+    },
+  );
 
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      const detail = errorData?.error?.message ?? JSON.stringify(errorData);
-      console.error("Spotify createPlaylist error:", res.status, detail);
-      throw new Error(
-        `Spotify error ${res.status}: ${detail}`,
-      );
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    const spotifyMsg = errorData?.error?.message ?? "unknown error";
+    console.error("Spotify createPlaylist error:", res.status, spotifyMsg);
+    const err = new Error(`Spotify ${res.status}: ${spotifyMsg}`);
+    // tag scope-specific 403s so the export route can distinguish them
+    if (
+      res.status === 403 &&
+      spotifyMsg.toLowerCase().includes("scope")
+    ) {
+      (err as Error & { isScopeError: boolean }).isScopeError = true;
     }
-
-    return res.json();
-  } catch (err) {
     throw err;
   }
+
+  return res.json();
 }
 
 export async function addTracksToPlaylist(
