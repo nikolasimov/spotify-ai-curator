@@ -15,6 +15,7 @@ export interface RecommendationInput {
   mood: string;
   tracks: { name: string; artist: string }[];
   artists: { name: string; genres?: string[] }[];
+  count: number;
 }
 
 export interface Recommendation {
@@ -56,8 +57,10 @@ export async function getRecommendations(
     parts.push(`Artists I love:\n${list}`);
   }
 
+  const count = Math.min(Math.max(input.count || 8, 4), 30);
+
   parts.push(
-    "Based on all of this, recommend songs that match my mood and taste.",
+    `Based on all of this, recommend ${count} songs that match my mood and taste.`,
   );
 
   const response = await client.chat.completions.create({
@@ -69,7 +72,7 @@ export async function getRecommendations(
         content: `You are a music curator with deep, eclectic taste. The user is telling you how they feel and sharing music they love. Your job is to recommend songs that match their current mood while respecting their taste.
 
 Guidelines:
-- Recommend 8 songs they haven't mentioned
+- Recommend exactly ${count} songs they haven't mentioned
 - Mix well-known tracks with deeper cuts — don't just suggest Top 40
 - Each recommendation should feel intentional, not algorithmic
 - Consider the mood description, the genres implied by their artists, and the energy of their tracks
@@ -84,7 +87,7 @@ Only respond with JSON, no extra text:
       },
     ],
     temperature: 0.85,
-    max_tokens: 1200,
+    max_tokens: Math.max(1200, count * 150),
   });
 
   const content = response.choices[0]?.message?.content ?? "{}";

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { mood, tracks, artists } = body;
+    const { mood, tracks, artists, count } = body;
 
     // if the user didn't select anything manually, fall back to their top tracks
     let trackSeeds = tracks ?? [];
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
       mood: mood ?? "",
       tracks: trackSeeds,
       artists: artistSeeds,
+      count: count ?? 8,
     });
 
     return NextResponse.json({ recommendations });

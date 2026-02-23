@@ -47,6 +47,7 @@ export default function DashboardShell({ user }: Props) {
 
   // prompt + selections
   const [prompt, setPrompt] = useState("");
+  const [playlistSize, setPlaylistSize] = useState(8);
   const [selectedTracks, setSelectedTracks] = useState<Track[]>([]);
   const [selectedArtists, setSelectedArtists] = useState<Artist[]>([]);
 
@@ -119,6 +120,7 @@ export default function DashboardShell({ user }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mood: prompt,
+          count: playlistSize,
           tracks: selectedTracks.map((t) => ({
             name: t.name,
             artist: t.artists[0]?.name ?? "Unknown",
@@ -138,7 +140,7 @@ export default function DashboardShell({ user }: Props) {
     } finally {
       setGenerating(false);
     }
-  }, [prompt, selectedTracks, selectedArtists]);
+  }, [prompt, playlistSize, selectedTracks, selectedArtists]);
 
   // ─── export to Spotify ─────────────────────────────────────────────────
 
@@ -220,6 +222,24 @@ export default function DashboardShell({ user }: Props) {
             rows={3}
             className="w-full resize-none rounded-xl bg-transparent px-4 py-3 text-sm text-white placeholder-white/25 outline-none"
           />
+        </div>
+
+        {/* playlist size slider */}
+        <div className="mt-4 flex items-center gap-4 px-1">
+          <label className="text-xs text-white/40 whitespace-nowrap">
+            Playlist size
+          </label>
+          <input
+            type="range"
+            min={4}
+            max={30}
+            value={playlistSize}
+            onChange={(e) => setPlaylistSize(Number(e.target.value))}
+            className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-white/10 accent-violet-400 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-violet-400"
+          />
+          <span className="min-w-[2rem] text-center text-xs font-medium text-violet-300">
+            {playlistSize}
+          </span>
         </div>
 
         {/* selected seeds show as removable chips */}
