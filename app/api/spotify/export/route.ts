@@ -15,6 +15,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  console.log("export: session scopes:", session.scope ?? "(none stored)");
+
   try {
     const body: ExportBody = await req.json();
     const { playlistName, playlistDescription, tracks } = body;

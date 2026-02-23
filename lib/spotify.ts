@@ -197,7 +197,7 @@ export async function createPlaylist(
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name, description, public: false }),
+      body: JSON.stringify({ name, description, public: true }),
     },
   );
 
