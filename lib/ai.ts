@@ -24,11 +24,17 @@ export interface Recommendation {
   reason: string;
 }
 
+export interface AIResponse {
+  playlistName: string;
+  playlistDescription: string;
+  recommendations: Recommendation[];
+}
+
 // ─── main function ──────────────────────────────────────────────────────────
 
 export async function getRecommendations(
   input: RecommendationInput,
-): Promise<Recommendation[]> {
+): Promise<AIResponse> {
   if (!GITHUB_TOKEN) throw new Error("GITHUB_TOKEN is not set");
 
   // build a natural-sounding message from whatever the user gave us
@@ -73,13 +79,16 @@ export async function getRecommendations(
 
 Guidelines:
 - Recommend exactly ${count} songs they haven't mentioned
+- Only recommend REAL songs that actually exist on Spotify — never invent song titles
 - Mix well-known tracks with deeper cuts — don't just suggest Top 40
 - Each recommendation should feel intentional, not algorithmic
 - Consider the mood description, the genres implied by their artists, and the energy of their tracks
 - Write reasons like a friend who knows music well — personal and specific, not generic
+- Generate a creative, evocative playlist name (2-5 words, no quotes) that captures the vibe
+- Write a short playlist description (1-2 sentences) that captures the mood
 
 Only respond with JSON, no extra text:
-{"recommendations": [{"name": "song title", "artist": "artist name", "reason": "why they'd love it"}]}`,
+{"playlistName": "creative name", "playlistDescription": "short mood description", "recommendations": [{"name": "song title", "artist": "artist name", "reason": "why they'd love it"}]}`,
       },
       {
         role: "user",
@@ -92,5 +101,9 @@ Only respond with JSON, no extra text:
 
   const content = response.choices[0]?.message?.content ?? "{}";
   const parsed = JSON.parse(content);
-  return parsed.recommendations ?? [];
+  return {
+    playlistName: parsed.playlistName ?? "AI Curator Picks",
+    playlistDescription: parsed.playlistDescription ?? "Curated by AI",
+    recommendations: parsed.recommendations ?? [],
+  };
 }

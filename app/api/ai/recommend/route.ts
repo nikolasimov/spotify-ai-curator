@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { getTopTracks } from "@/lib/spotify";
+import { getTopTracks, searchTrack } from "@/lib/spotify";
 import { getRecommendations } from "@/lib/ai";
 
 export async function POST(req: NextRequest) {
@@ -26,14 +26,36 @@ export async function POST(req: NextRequest) {
       }));
     }
 
-    const recommendations = await getRecommendations({
+    const aiResult = await getRecommendations({
       mood: mood ?? "",
       tracks: trackSeeds,
       artists: artistSeeds,
       count: count ?? 8,
     });
 
-    return NextResponse.json({ recommendations });
+    // resolve each recommendation on Spotify to get URIs + album art
+    const enriched = await Promise.all(
+      aiResult.recommendations.map(async (rec) => {
+        const result = await searchTrack(
+          session.accessToken,
+          rec.name,
+          rec.artist,
+        );
+        return {
+          name: result?.name ?? rec.name,
+          artist: result?.artist ?? rec.artist,
+          reason: rec.reason,
+          uri: result?.uri ?? null,
+          albumArt: result?.albumArt ?? null,
+        };
+      }),
+    );
+
+    return NextResponse.json({
+      playlistName: aiResult.playlistName,
+      playlistDescription: aiResult.playlistDescription,
+      recommendations: enriched,
+    });
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "something went wrong";

@@ -250,7 +250,7 @@ export async function searchTrack(
   accessToken: string,
   trackName: string,
   artistName: string,
-): Promise<{ uri: string; name: string; artist: string } | null> {
+): Promise<{ uri: string; name: string; artist: string; albumArt: string | null } | null> {
   // clean up the query — strip stuff like "(feat. X)", "[Deluxe]", etc.
   const cleanName = trackName.replace(/\s*[\(\[][^\)\]]*[\)\]]\s*/g, "").trim();
   const cleanArtist = artistName.replace(/\s*[\(\[][^\)\]]*[\)\]]\s*/g, "").trim();
@@ -270,6 +270,7 @@ export async function searchTrack(
         uri: track.uri,
         name: track.name,
         artist: track.artists?.[0]?.name ?? artistName,
+        albumArt: track.album?.images?.[0]?.url ?? null,
       };
     }
   }
@@ -290,5 +291,6 @@ export async function searchTrack(
     uri: fallbackTrack.uri,
     name: fallbackTrack.name,
     artist: fallbackTrack.artists?.[0]?.name ?? artistName,
+    albumArt: fallbackTrack.album?.images?.[0]?.url ?? null,
   };
 }

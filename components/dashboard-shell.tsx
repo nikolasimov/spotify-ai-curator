@@ -24,6 +24,8 @@ interface Recommendation {
   name: string;
   artist: string;
   reason: string;
+  uri: string | null;
+  albumArt: string | null;
 }
 
 interface ExportResult {
@@ -53,6 +55,8 @@ export default function DashboardShell({ user }: Props) {
 
   // generation
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [playlistName, setPlaylistName] = useState("");
+  const [playlistDescription, setPlaylistDescription] = useState("");
   const [generating, setGenerating] = useState(false);
 
   // export
@@ -135,6 +139,8 @@ export default function DashboardShell({ user }: Props) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "generation failed");
       setRecommendations(data.recommendations ?? []);
+      setPlaylistName(data.playlistName ?? "AI Curator Picks");
+      setPlaylistDescription(data.playlistDescription ?? "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "something went wrong");
     } finally {
@@ -151,16 +157,38 @@ export default function DashboardShell({ user }: Props) {
     setError(null);
 
     try {
+      // only export tracks that were found on Spotify
+      const exportable = recommendations.filter((r) => r.uri);
+
+      if (exportable.length === 0) {
+        setError("None of these tracks were found on Spotify.");
+        setExporting(false);
+        return;
+      }
+
       const res = await fetch("/api/spotify/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mood: prompt,
-          recommendations,
+          playlistName,
+          playlistDescription,
+          tracks: exportable.map((r) => ({
+            uri: r.uri,
+            name: r.name,
+            artist: r.artist,
+          })),
         }),
       });
 
       const data = await res.json();
+
+      // handle re-auth: sign out via POST (no redirect), then navigate
+      if (data.action === "reauth") {
+        await fetch("/api/auth/signout", { method: "POST" });
+        window.location.href = "/api/auth/signin/spotify";
+        return;
+      }
+
       if (!res.ok) throw new Error(data.error ?? "export failed");
       setExportResult(data);
     } catch (err) {
@@ -168,34 +196,7 @@ export default function DashboardShell({ user }: Props) {
     } finally {
       setExporting(false);
     }
-  }, [recommendations, prompt]);
-
-  // ─── generate a display name for the playlist ──────────────────────────
-
-  const playlistDisplayName = (() => {
-    if (!prompt.trim()) return `AI Curator Picks`;
-    const lower = prompt.toLowerCase();
-    const moods: [RegExp, string][] = [
-      [/chill|relax|calm|peaceful|mellow/, "Chill Vibes"],
-      [/sad|melanchol|lonely|heartbr|cry/, "In My Feelings"],
-      [/hype|energy|pump|workout|gym|run/, "All Gas"],
-      [/happy|joy|upbeat|cheerful|good mood/, "Good Energy"],
-      [/focus|study|concentrate|work|code/, "Deep Focus"],
-      [/driv|road|cruise|highway/, "Road Trip Mix"],
-      [/nostalg|throwback|old school|retro/, "Nostalgia Trip"],
-      [/party|dance|club|friday|weekend/, "Let's Go"],
-      [/sleep|dream|ambient|drift/, "Drift Off"],
-      [/rain|storm|cozy|autumn|winter/, "Rainy Day"],
-      [/love|romantic|crush|date/, "Heartstrings"],
-      [/angry|rage|frustrated|heavy/, "Burn It Down"],
-    ];
-    for (const [pattern, title] of moods) {
-      if (pattern.test(lower)) return title;
-    }
-    const words = prompt.trim().split(/\s+/).slice(0, 5).join(" ");
-    const capped = words.charAt(0).toUpperCase() + words.slice(1);
-    return capped.length > 30 ? `${capped.slice(0, 28)}…` : capped;
-  })();
+  }, [recommendations, playlistName, playlistDescription]);
 
   // ─── helpers ────────────────────────────────────────────────────────────
 
@@ -478,23 +479,57 @@ export default function DashboardShell({ user }: Props) {
           {/* ── playlist header ─────────────────────────────────────────── */}
           <div className="mb-6 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-violet-600/20 via-indigo-600/15 to-fuchsia-600/10 p-6 backdrop-blur-xl sm:p-8">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
-              {/* album-art style square */}
-              <div className="flex h-36 w-36 flex-shrink-0 items-center justify-center self-center rounded-xl bg-gradient-to-br from-violet-500/40 to-indigo-700/40 shadow-xl shadow-violet-900/30 sm:self-auto">
-                <svg
-                  width="48"
-                  height="48"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-violet-200/60"
-                >
-                  <path d="M9 18V5l12-2v13" />
-                  <circle cx="6" cy="18" r="3" />
-                  <circle cx="18" cy="16" r="3" />
-                </svg>
+              {/* mosaic cover from first 4 album arts */}
+              <div className="relative h-36 w-36 flex-shrink-0 self-center overflow-hidden rounded-xl shadow-xl shadow-violet-900/30 sm:self-auto">
+                {(() => {
+                  const covers = recommendations
+                    .filter((r) => r.albumArt)
+                    .slice(0, 4)
+                    .map((r) => r.albumArt!);
+                  if (covers.length >= 4) {
+                    return (
+                      <div className="grid h-full w-full grid-cols-2 grid-rows-2">
+                        {covers.map((url, i) => (
+                          <div key={i} className="relative">
+                            <Image
+                              src={url}
+                              alt=""
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+                  if (covers.length > 0) {
+                    return (
+                      <Image
+                        src={covers[0]}
+                        alt=""
+                        fill
+                        className="object-cover"
+                      />
+                    );
+                  }
+                  return (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-violet-500/40 to-indigo-700/40">
+                      <svg
+                        width="48"
+                        height="48"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        className="text-violet-200/60"
+                      >
+                        <path d="M9 18V5l12-2v13" />
+                        <circle cx="6" cy="18" r="3" />
+                        <circle cx="18" cy="16" r="3" />
+                      </svg>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="min-w-0 flex-1 text-center sm:text-left">
@@ -502,35 +537,23 @@ export default function DashboardShell({ user }: Props) {
                   AI Generated Playlist
                 </p>
                 <h2 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
-                  {playlistDisplayName}
+                  {playlistName}
                 </h2>
-                {prompt.trim() && (
-                  <p className="mt-2 line-clamp-2 text-sm text-white/40">
-                    &ldquo;{prompt}&rdquo;
+                {playlistDescription && (
+                  <p className="mt-2 text-sm text-white/40">
+                    {playlistDescription}
                   </p>
                 )}
                 <div className="mt-3 flex items-center justify-center gap-3 text-xs text-white/30 sm:justify-start">
                   <span>
-                    {recommendations.length} track
-                    {recommendations.length !== 1 ? "s" : ""}
+                    {recommendations.filter((r) => r.uri).length} track
+                    {recommendations.filter((r) => r.uri).length !== 1
+                      ? "s"
+                      : ""}{" "}
+                    found on Spotify
                   </span>
                   <span className="text-white/15">•</span>
                   <span>Curated by AI</span>
-                  {(selectedTracks.length > 0 || selectedArtists.length > 0) && (
-                    <>
-                      <span className="text-white/15">•</span>
-                      <span>
-                        Based on{" "}
-                        {selectedTracks.length > 0 &&
-                          `${selectedTracks.length} track${selectedTracks.length !== 1 ? "s" : ""}`}
-                        {selectedTracks.length > 0 &&
-                          selectedArtists.length > 0 &&
-                          " & "}
-                        {selectedArtists.length > 0 &&
-                          `${selectedArtists.length} artist${selectedArtists.length !== 1 ? "s" : ""}`}
-                      </span>
-                    </>
-                  )}
                 </div>
               </div>
             </div>
@@ -539,23 +562,41 @@ export default function DashboardShell({ user }: Props) {
           {/* ── track list ──────────────────────────────────────────────── */}
           <div className="overflow-hidden rounded-xl border border-white/8 bg-white/[0.02]">
             {/* header row */}
-            <div className="grid grid-cols-[2rem_1fr_auto] items-center gap-3 border-b border-white/8 px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-white/25 sm:grid-cols-[2rem_1fr_1fr_auto]">
+            <div className="grid grid-cols-[2rem_2.5rem_1fr_auto] items-center gap-3 border-b border-white/8 px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-white/25 sm:grid-cols-[2rem_2.5rem_1fr_1fr]">
               <span className="text-center">#</span>
+              <span />
               <span>Title</span>
               <span className="hidden sm:block">Why this song</span>
-              <span className="w-8" />
             </div>
 
             {/* track rows */}
             {recommendations.map((rec, i) => (
               <div
                 key={i}
-                className="group grid grid-cols-[2rem_1fr_auto] items-center gap-3 border-b border-white/[0.04] px-4 py-3 transition last:border-b-0 hover:bg-white/[0.03] sm:grid-cols-[2rem_1fr_1fr_auto]"
+                className={`group grid grid-cols-[2rem_2.5rem_1fr_auto] items-center gap-3 border-b border-white/[0.04] px-4 py-2.5 transition last:border-b-0 hover:bg-white/[0.03] sm:grid-cols-[2rem_2.5rem_1fr_1fr] ${
+                  !rec.uri ? "opacity-40" : ""
+                }`}
               >
                 {/* number */}
                 <span className="text-center text-sm tabular-nums text-white/25 group-hover:text-white/40">
                   {i + 1}
                 </span>
+
+                {/* album art */}
+                <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded bg-white/5">
+                  {rec.albumArt ? (
+                    <Image
+                      src={rec.albumArt}
+                      alt={rec.name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-xs text-white/15">
+                      ♪
+                    </div>
+                  )}
+                </div>
 
                 {/* title + artist */}
                 <div className="min-w-0">
@@ -564,31 +605,18 @@ export default function DashboardShell({ user }: Props) {
                   </p>
                   <p className="truncate text-xs text-white/40">
                     {rec.artist}
+                    {!rec.uri && (
+                      <span className="ml-2 text-red-400/60">
+                        · not on Spotify
+                      </span>
+                    )}
                   </p>
                 </div>
 
-                {/* reason (hidden on mobile) */}
+                {/* reason (hidden on mobile, visible on desktop) */}
                 <p className="hidden truncate text-xs text-white/25 sm:block">
                   {rec.reason}
                 </p>
-
-                {/* music note icon */}
-                <div className="flex h-8 w-8 items-center justify-center rounded-full text-white/15 group-hover:text-white/30">
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M9 18V5l12-2v13" />
-                    <circle cx="6" cy="18" r="3" />
-                    <circle cx="18" cy="16" r="3" />
-                  </svg>
-                </div>
               </div>
             ))}
           </div>
@@ -614,13 +642,16 @@ export default function DashboardShell({ user }: Props) {
             ) : (
               <button
                 onClick={handleExport}
-                disabled={exporting}
+                disabled={
+                  exporting ||
+                  recommendations.filter((r) => r.uri).length === 0
+                }
                 className="inline-flex items-center gap-2.5 rounded-full bg-[#1DB954] px-8 py-3 text-sm font-semibold text-black shadow-lg shadow-green-900/20 transition hover:bg-[#1ed760] hover:shadow-green-900/30 disabled:opacity-50"
               >
                 {exporting ? (
                   <>
                     <Spinner />
-                    Exporting to Spotify...
+                    Creating playlist...
                   </>
                 ) : (
                   <>
@@ -635,6 +666,8 @@ export default function DashboardShell({ user }: Props) {
               onClick={() => {
                 setRecommendations([]);
                 setExportResult(null);
+                setPlaylistName("");
+                setPlaylistDescription("");
               }}
               className="text-xs text-white/25 transition hover:text-white/50"
             >
